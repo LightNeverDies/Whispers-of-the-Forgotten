@@ -1,4 +1,4 @@
-using TMPro;
+п»їusing TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -19,7 +19,7 @@ public class StoryPickController : MonoBehaviour
     public Item currentItem;
     public int collectedPieces;
     public Button continueButton;
-    public float typingSpeed = 0.05f;
+    public float typingSpeed = 25f;
 
     private void Start()
     {
@@ -91,9 +91,9 @@ public class StoryPickController : MonoBehaviour
             Cursor.lockState = CursorLockMode.None;
 
             TextMeshProUGUI contentText = storyLine.GetComponentInChildren<TextMeshProUGUI>();
-            contentText.text = "";
 
-            StartCoroutine(RevealTextRoutine(contentText, currentItem.content));
+            contentText.text = currentItem.content;
+            continueButton.gameObject.SetActive(true);
 
             Time.timeScale = 0f;
             collectedPieces += 1;
@@ -104,23 +104,6 @@ public class StoryPickController : MonoBehaviour
             hints.HideHint();
         }
     }
-
-    IEnumerator RevealTextRoutine(TextMeshProUGUI textComponent, string fullText)
-    {
-        Debug.Log("Започва анимацията на текста"); // Отладъчно съобщение
-        textComponent.text = ""; // Изчистваме текста
-
-        for (int i = 0; i <= fullText.Length; i++)
-        {
-            textComponent.text = fullText.Substring(0, i);  // Постепенно добавяме текста
-            Debug.Log("Текущ текст: " + textComponent.text); // Отладъчно съобщение за показване на текста
-            yield return new WaitForSeconds(typingSpeed);    // Изчакваме за анимацията
-        }
-
-        Debug.Log("Текстът е изписан"); // Отладъчно съобщение за приключване
-        continueButton.gameObject.SetActive(true); // Показваме бутона за продължаване
-    }
-
 
     public void ContinueButtonEndGame()
     {

@@ -66,18 +66,4 @@ BUGS:
 After hitting something like puzzel the player can use WASD and still move this needs to be fixed -> FIX
 Hitting the wall with axe the sound is before the hit should be fix - Needs to be fixed
 Sometimes again you can fall under the map - Changed some Project Settings
-Text in Stories to be written with animation to be more cool - Work on it
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Text in Stories to be written with animation to be more cool - Fix
