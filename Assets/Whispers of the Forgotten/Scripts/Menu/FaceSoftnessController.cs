@@ -18,7 +18,6 @@ public class FaceSoftnessController : MonoBehaviour
         // Ensure material is assigned
         if (textMaterial == null)
         {
-            Debug.LogError("TextMesh Pro material is not assigned or found.");
             return;
         }
 
@@ -31,7 +30,7 @@ public class FaceSoftnessController : MonoBehaviour
         // Start the transition coroutine if it's not already running
         if (transitionCoroutine == null)
         {
-            transitionCoroutine = StartCoroutine(LoopTransitionFaceSoftness(0.1f, 0.6f, duration));
+            transitionCoroutine = StartCoroutine(LoopTransitionFaceSoftness(0.1f, 0.4f, duration));
         }
     }
 

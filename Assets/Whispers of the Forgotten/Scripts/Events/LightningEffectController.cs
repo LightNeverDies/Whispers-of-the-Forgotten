@@ -16,7 +16,6 @@ public class LightningEffectController : MonoBehaviour
     {
         if (lightningLight == null)
         {
-            Debug.LogError("Lightning object is not assigned.");
             return;
         }
 

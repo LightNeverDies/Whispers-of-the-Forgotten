@@ -15,7 +15,7 @@ public class LoadingScreen : MonoBehaviour
 
     private IEnumerator LoadGameScene()
     {
-        float loadTime = 10f; // Set the time for loading (in seconds)
+        float loadTime = 15f; // Set the time for loading (in seconds)
         float elapsedTime = 0f;
 
         while (elapsedTime < loadTime)

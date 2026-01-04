@@ -1,76 +1,247 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class FlashlightController : MonoBehaviour
 {
-    public Light flashlight;  // Reference to the Light component
-    public float rotationSpeed = 10f;  // Speed at which the flashlight follows the camera
-
-    [HideInInspector]
-    public enum FlashlightState { Off, White, UV }
-    public FlashlightState flashlightState = FlashlightState.Off; // Current state of the flashlight
-    public bool isEventGoing = false;
-
+    [Header("Flashlight Components")]
+    public Light flashlight;
     public AudioSource flashlightClick;
+    
+    [Header("Movement Settings")]
+    public float rotationSpeed = 4f;
+    public float fadeSpeed = 15f;
+    
+    [Header("Light Settings")]
+    public Color normalColor = Color.white;
+    public Color uvColor = new Color(0.4f, 0.1f, 0.8f);
+    public float whiteIntensity = 5f;
+    public float uvIntensity = 4f;
+    
+    [Header("State")]
+    public bool isInLockView = false;
+    public bool canUseFlashlight = false;
+    public bool isEventGoing = false;
+    
+    [Header("UI")]
+    public Image flashlightIconOffImage;
+    public Image flashlightIconWhiteImage;
+    public Image flashlightIconUVImage;
+    public GameObject player;
 
-    public Color normalColor = Color.white; // Normal light color
-    public Color uvColor = new Color(0.4f, 0.1f, 0.8f); // UV light color
-
-    // Add a public property to expose the flashlight state
+    public enum FlashlightState { Off, White, UV }
+    public FlashlightState flashlightState = FlashlightState.Off;
     public bool IsUVLightOn => flashlightState == FlashlightState.UV;
 
-    // Offset to position the flashlight lower and to the right
-   // public Vector3 flashlightOffset = new Vector3(0.3f, -0.2f, 0f); 
+    // Cached components for performance
+    private Transform flashlightTransform;
+    private Transform cameraTransform;
+    private PlayerMovement playerMovement;
+    
+    // Performance variables
+    private float targetIntensity = 0f;
+    private float flickerTimer = 0f;
+    private float pulseTimer = 0f;
+    
+    // State tracking
+    private FlashlightState lastFlashlightState = FlashlightState.Off;
+
+    void Start()
+    {
+        InitializeComponents();
+    }
+
+    void InitializeComponents()
+    {
+        // Cache transforms for better performance
+        if (flashlight != null)
+        {
+            flashlightTransform = flashlight.transform;
+        }
+        
+        if (Camera.main != null)
+        {
+            cameraTransform = Camera.main.transform;
+        }
+        
+        if (player != null)
+        {
+            playerMovement = player.GetComponent<PlayerMovement>();
+        }
+        
+        // Initialize flashlight state
+        if (flashlight != null)
+        {
+            flashlight.enabled = false;
+            flashlight.intensity = 0f;
+        }
+    }
 
     void Update()
     {
-        // Toggle flashlight and switch colors with F key
+        if (!canUseFlashlight)
+            return;
+
+        // Check if player input is enabled
+        if (playerMovement != null && !playerMovement.inputEnabled) 
+            return;
+            
+        if (isInLockView) 
+            return;
+
+        HandleInput();
+        UpdateFlashlightPosition();
+        UpdateFlashlightIntensity();
+        UpdateUI();
+    }
+
+    void HandleInput()
+    {
         if (Input.GetKeyDown(KeyCode.F))
         {
-            switch (flashlightState)
-            {
-                case FlashlightState.Off:
-                    flashlightState = FlashlightState.White;
-                    flashlight.enabled = true;
-                    flashlightClick.enabled = true;
-                    flashlight.color = normalColor; // Start with normal color
-                    break;
-
-                case FlashlightState.White:
-                    flashlightState = FlashlightState.UV;
-                    flashlight.color = uvColor; // Switch to UV color
-                    break;
-
-                case FlashlightState.UV:
-                    flashlightState = FlashlightState.Off;
-                    flashlight.enabled = false;
-                    flashlightClick.enabled = false;
-                    break;
-            }
+            ToggleFlashlight();
         }
 
-        // Move flashlight direction based on camera direction
-        if (flashlight.enabled)
+        if (Input.GetKeyDown(KeyCode.R) && flashlightState != FlashlightState.Off)
         {
-            Transform cameraTransform = Camera.main.transform;
-            flashlight.transform.position = cameraTransform.position;
+            SwitchFlashlightMode();
+        }
+    }
 
-            // Set flashlight position to be slightly lower and offset from the camera
-            // flashlight.transform.position = cameraTransform.position + cameraTransform.right * flashlightOffset.x
-            //  + cameraTransform.up * flashlightOffset.y
-            // + cameraTransform.forward * flashlightOffset.z;
+    void ToggleFlashlight()
+    {
+        PlayClickSound();
 
-            // Set flashlight rotation to match the camera's rotation
-            flashlight.transform.rotation = cameraTransform.rotation;
-
-            // Flicker effect during events
-            if (isEventGoing)
+        if (flashlightState == FlashlightState.Off)
+        {
+            flashlightState = FlashlightState.White;
+            if (flashlight != null)
             {
-                flashlight.intensity = Random.Range(0.4f, 0.6f);
-            }
-            else
-            {
-                flashlight.intensity = 0.6f;
+                flashlight.enabled = true;
+                flashlight.color = normalColor;
+                targetIntensity = whiteIntensity;
             }
         }
+        else
+        {
+            flashlightState = FlashlightState.Off;
+            targetIntensity = 0f;
+        }
+    }
+
+    void SwitchFlashlightMode()
+    {
+        PlayClickSound();
+
+        if (flashlightState == FlashlightState.White)
+        {
+            flashlightState = FlashlightState.UV;
+            if (flashlight != null)
+            {
+                flashlight.color = uvColor;
+                targetIntensity = uvIntensity;
+            }
+        }
+        else if (flashlightState == FlashlightState.UV)
+        {
+            flashlightState = FlashlightState.White;
+            if (flashlight != null)
+            {
+                flashlight.color = normalColor;
+                targetIntensity = whiteIntensity;
+            }
+        }
+    }
+
+    void PlayClickSound()
+    {
+        if (flashlightClick != null)
+        {
+            flashlightClick.enabled = true;
+            flashlightClick.Play();
+        }
+    }
+
+    void UpdateFlashlightPosition()
+    {
+        if (flashlight != null && flashlight.enabled && cameraTransform != null)
+        {
+            // Update position and rotation more efficiently
+            flashlightTransform.position = cameraTransform.position;
+            
+            // Use Slerp for smoother rotation
+            flashlightTransform.rotation = Quaternion.Slerp(
+                flashlightTransform.rotation, 
+                cameraTransform.rotation, 
+                Time.deltaTime * rotationSpeed
+            );
+        }
+    }
+
+    void UpdateFlashlightIntensity()
+    {
+        if (flashlight == null) return;
+
+        if (isEventGoing && flashlightState != FlashlightState.Off)
+        {
+            // Event flickering
+            flickerTimer -= Time.deltaTime;
+            if (flickerTimer <= 0f)
+            {
+                flashlight.intensity = targetIntensity * Random.Range(0.3f, 4f);
+                flickerTimer = Random.Range(0.02f, 0.15f);
+            }
+        }
+        else
+        {
+            // Normal pulsing
+            pulseTimer += Time.deltaTime * 2f;
+            float pulse = 1f + Mathf.Sin(pulseTimer * 2f) * 0.02f;
+            float finalTarget = flashlightState == FlashlightState.Off ? 0f : targetIntensity * pulse;
+            
+            flashlight.intensity = Mathf.Lerp(flashlight.intensity, finalTarget, Time.deltaTime * fadeSpeed);
+
+            // Disable flashlight when intensity is very low
+            if (flashlightState == FlashlightState.Off && flashlight.intensity < 0.05f)
+            {
+                flashlight.enabled = false;
+            }
+        }
+    }
+
+    void UpdateUI()
+    {
+        // Only update UI when state changes
+        if (flashlightState != lastFlashlightState)
+        {
+            if (flashlightIconOffImage != null)
+                flashlightIconOffImage.enabled = (flashlightState == FlashlightState.Off);
+            if (flashlightIconWhiteImage != null)
+                flashlightIconWhiteImage.enabled = (flashlightState == FlashlightState.White);
+            if (flashlightIconUVImage != null)
+                flashlightIconUVImage.enabled = (flashlightState == FlashlightState.UV);
+                
+            lastFlashlightState = flashlightState;
+        }
+    }
+
+    // Public methods for external control
+    public void SetEventState(bool eventState)
+    {
+        isEventGoing = eventState;
+    }
+
+    public void SetFlashlightEnabled(bool enabled)
+    {
+        canUseFlashlight = enabled;
+        if (!enabled && flashlight != null)
+        {
+            flashlight.enabled = false;
+            flashlightState = FlashlightState.Off;
+        }
+    }
+
+    public void ForceUpdateFlashlight()
+    {
+        // Removed the update frequency limiting
     }
 }

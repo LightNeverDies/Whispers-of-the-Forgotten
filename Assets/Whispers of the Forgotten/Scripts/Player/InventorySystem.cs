@@ -6,27 +6,43 @@ public class InventorySystem : MonoBehaviour
 {
     public GameObject[] inventorySlots;
     private List<Item> inventoryItems = new List<Item>();
-    private bool isItemNear = false;
+    public bool isItemNear = false;
 
     public GameObject inventoryPanel;
     public Hints hints;
+    [Tooltip("The hand texture to display in the center of the screen")]
+    public Texture2D handTexture;
+    [Tooltip("Scale factor for the hand texture (0.1 = 10% of original size)")]
+    public float handTextureScale = 0.05f;
     public float rayDistance = 1f;
     public LayerMask itemLayerMask;
+    [Tooltip("Layer mask for obstructions (walls, etc.) that block raycast. Leave as 'Nothing' to use everything except itemLayerMask.")]
+    public LayerMask obstructionLayer;
     public LockerController locker;
     public ObjectiveManager objectiveManager;
+    public SubtitleManager subtitleManager;
+    
 
     [HideInInspector]
     public Item currentItem;
+    public bool isInventoryOpen = false;
+
+    // Used by tutorial to block inventory opening until the appropriate step.
+    [HideInInspector]
+    public bool canToggleInventory = true;
+
+    private Camera mainCamera;
 
     private void Start()
     {
         inventoryPanel.SetActive(false);
         itemLayerMask = LayerMask.GetMask("Pickable");
+        mainCamera = Camera.main;
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.I))
+        if (canToggleInventory && Input.GetKeyDown(KeyCode.I))
         {
             ToggleInventory();
         }
@@ -42,15 +58,55 @@ public class InventorySystem : MonoBehaviour
     private void ToggleInventory()
     {
         inventoryPanel.SetActive(!inventoryPanel.activeSelf);
+
+        isInventoryOpen = inventoryPanel.activeSelf;
+
+        if (inventoryPanel.activeSelf) { 
+        
+            Time.timeScale = 0f;
+        } else
+        {
+            Time.timeScale = 1f;
+        }
     }
 
     private void CheckForItem()
     {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+            if (mainCamera == null) return;
+        }
+
+        // Cursor is locked in FPS controls; use center-screen ray for consistent pickup behavior.
+        Ray ray = mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
         RaycastHit hit;
 
         if (Physics.Raycast(ray, out hit, rayDistance, itemLayerMask))
         {
+            // Check for obstructions between camera and hit point
+            Vector3 camPos = mainCamera.transform.position;
+            Vector3 directionToItem = hit.point - camPos;
+            float distanceToItem = Vector3.Distance(camPos, hit.point);
+            RaycastHit obstructionHit;
+            
+            // Use obstructionLayer if set, otherwise use everything except itemLayerMask
+            LayerMask obstructionCheckLayer = obstructionLayer.value != 0 ? obstructionLayer : ~itemLayerMask;
+            
+            if (Physics.Raycast(camPos, directionToItem.normalized, out obstructionHit, distanceToItem, obstructionCheckLayer))
+            {
+                // Check if the obstruction is the target object itself
+                if (obstructionHit.collider != hit.collider)
+                {
+                    // There's an obstruction blocking the view
+                    if (isItemNear)
+                    {
+                        isItemNear = false;
+                        currentItem = null;
+                    }
+                    return;
+                }
+            }
 
             if (hit.collider.CompareTag("Pickupable"))
             {
@@ -62,7 +118,6 @@ public class InventorySystem : MonoBehaviour
                     if (!isItemNear || currentItem != item)
                     {
                         currentItem = item;
-                        hints.ShowHint("Press E to Pickup " + item.itemName);
                     }
                     isItemNear = true;
                     return;
@@ -73,9 +128,26 @@ public class InventorySystem : MonoBehaviour
 
         if(isItemNear)
         {
-            hints.HideHint();
             isItemNear = false;
             currentItem = null;
+        }
+    }
+
+    void OnGUI()
+    {
+        // Only show hand texture when near a pickupable item
+        if (Event.current.type == EventType.Repaint && handTexture != null && isItemNear)
+        {
+            // Calculate scaled size
+            float scaledWidth = handTexture.width * handTextureScale;
+            float scaledHeight = handTexture.height * handTextureScale;
+            
+            // Calculate center position of the screen
+            float x = (Screen.width - scaledWidth) * 0.5f;
+            float y = (Screen.height - scaledHeight) * 0.5f;
+            
+            // Draw the hand texture at the center with scaled size
+            GUI.DrawTexture(new Rect(x, y, scaledWidth, scaledHeight), handTexture);
         }
     }
 
@@ -84,6 +156,13 @@ public class InventorySystem : MonoBehaviour
         if (currentItem != null)
         {
             AddItemToInventory(currentItem);
+            
+            // Show subtitle when item is picked up
+            if (subtitleManager != null)
+            {
+                subtitleManager.ShowSubtitle("I will put it in my bag.");
+            }
+            
             if (locker != null)
             {
                 locker.OnItemPickedUp();
@@ -97,7 +176,6 @@ public class InventorySystem : MonoBehaviour
             Destroy(currentItem.gameObject);
             currentItem = null;
             isItemNear = false;
-            hints.HideHint();
         }
     }
     private void AddItemToInventory(Item item)

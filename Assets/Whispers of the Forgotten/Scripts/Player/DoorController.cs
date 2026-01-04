@@ -1,30 +1,38 @@
-﻿using System.Collections;
+﻿using Interfaces;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class DoorController : MonoBehaviour
+public class DoorController : MonoBehaviour, IInteractableHint
 {
     public float smooth = 2.0f;
     public float DoorOpenAngle = 90.0f;
     public float rotationTolerance = 1.0f;
     public float interactDistance = 1.0f;
     public LayerMask interactionLayer;
+    [Tooltip("Layer mask for obstructions (walls, etc.) that block raycast. Leave as 'Nothing' to use everything except interactionLayer.")]
+    public LayerMask obstructionLayer;
     private Quaternion defaultRot;
     private Quaternion openRot;
-    public Hints hints;
+    public SubtitleManager subtitleManager;
     public AudioSource doorCreak;
     public AudioSource lockDoor;
     public string requiredKeyName;
     public string itemObjective;
+    [Tooltip("The hand texture to display in the center of the screen")]
+    public Texture2D handTexture;
+    [Tooltip("Scale factor for the hand texture (0.1 = 10% of original size)")]
+    public float handTextureScale = 0.05f;
 
     [HideInInspector]
     public bool isMainDoorOpening = false;
+    public bool IsInteractableNear => isNearDoor;
 
     public InventorySystem inventory;
     public ObjectiveManager objectiveManager;
 
     private bool doorOpened = false;
-    private bool isNearDoor = false;
+    public bool isNearDoor = false;
 
     void Start()
     {
@@ -39,6 +47,29 @@ public class DoorController : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, interactDistance, interactionLayer))
         {
+            // Check for obstructions between camera and hit point
+            Vector3 camPos = Camera.main.transform.position;
+            Vector3 directionToHit = hit.point - camPos;
+            float distanceToHit = Vector3.Distance(camPos, hit.point);
+            RaycastHit obstructionHit;
+            
+            // Use obstructionLayer if set, otherwise use everything except interactionLayer
+            LayerMask obstructionCheckLayer = obstructionLayer.value != 0 ? obstructionLayer : ~interactionLayer;
+            
+            if (Physics.Raycast(camPos, directionToHit.normalized, out obstructionHit, distanceToHit, obstructionCheckLayer))
+            {
+                // Check if the obstruction is the target object itself
+                if (obstructionHit.collider != hit.collider)
+                {
+                    // There's an obstruction blocking the view
+                    if (isNearDoor)
+                    {
+                        isNearDoor = false;
+                    }
+                    return;
+                }
+            }
+            
             if (hit.collider.CompareTag("Door"))
             {
                 DoorController doorController = hit.collider.GetComponent<DoorController>();
@@ -51,7 +82,6 @@ public class DoorController : MonoBehaviour
         }
         else if (isNearDoor)
         {
-            hints.HideHint();
             isNearDoor = false;
         }
 
@@ -61,11 +91,10 @@ public class DoorController : MonoBehaviour
     {
         if (!doorOpened && !inventory.HasItem(requiredKeyName))
         {
-            hints.ShowHint("The door is locked. You need the " + requiredKeyName);
-        }
-        else if (!doorOpened && inventory.HasItem(requiredKeyName))
-        {
-            hints.ShowHint("Press E to Open");
+            if (subtitleManager != null)
+            {
+                subtitleManager.ShowSubtitle("The door is locked. I need to find the key to open it.");
+            }
         }
 
         if (!inventory.HasItem(requiredKeyName) && Input.GetKeyDown(KeyCode.E))
@@ -141,5 +170,23 @@ public class DoorController : MonoBehaviour
 
         // Load the "Menu" scene
         SceneManager.LoadScene("Menu");
+    }
+
+    void OnGUI()
+    {
+        // Only show hand texture when near an interactable door
+        if (Event.current.type == EventType.Repaint && handTexture != null && isNearDoor)
+        {
+            // Calculate scaled size
+            float scaledWidth = handTexture.width * handTextureScale;
+            float scaledHeight = handTexture.height * handTextureScale;
+            
+            // Calculate center position of the screen
+            float x = (Screen.width - scaledWidth) * 0.5f;
+            float y = (Screen.height - scaledHeight) * 0.5f;
+            
+            // Draw the hand texture at the center with scaled size
+            GUI.DrawTexture(new Rect(x, y, scaledWidth, scaledHeight), handTexture);
+        }
     }
 }

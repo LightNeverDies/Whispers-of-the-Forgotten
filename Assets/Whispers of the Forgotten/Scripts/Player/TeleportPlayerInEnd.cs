@@ -4,6 +4,10 @@ public class TeleportPlayerInEnd : MonoBehaviour
 {
     public float rayDisance = 1f;
     public Hints hints;
+    [Tooltip("The hand texture to display in the center of the screen")]
+    public Texture2D handTexture;
+    [Tooltip("Scale factor for the hand texture (0.1 = 10% of original size)")]
+    public float handTextureScale = 0.05f;
     public SubtitleManager subtitleManager;
     public Vector3 teleportPosition;
     public Quaternion teleportRotation;
@@ -54,7 +58,6 @@ public class TeleportPlayerInEnd : MonoBehaviour
                         {
                             currentItem = item;
                             subtitleManager.ShowSubtitle("I really want to see what is inside.");
-                            hints.ShowHint("Press E to See");
                         }
 
                         isItemNear = true;
@@ -66,9 +69,26 @@ public class TeleportPlayerInEnd : MonoBehaviour
 
         if (wasItemNear)
         {
-            hints.HideHint();
             isItemNear = false;
             currentItem = null;
+        }
+    }
+
+    void OnGUI()
+    {
+        // Only show hand texture when near magic ball
+        if (handTexture != null && isItemNear)
+        {
+            // Calculate scaled size
+            float scaledWidth = handTexture.width * handTextureScale;
+            float scaledHeight = handTexture.height * handTextureScale;
+            
+            // Calculate center position of the screen
+            float x = (Screen.width - scaledWidth) * 0.5f;
+            float y = (Screen.height - scaledHeight) * 0.5f;
+            
+            // Draw the hand texture at the center with scaled size
+            GUI.DrawTexture(new Rect(x, y, scaledWidth, scaledHeight), handTexture);
         }
     }
 

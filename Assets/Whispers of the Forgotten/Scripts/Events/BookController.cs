@@ -19,13 +19,11 @@ public class BookController : MonoBehaviour
 
     void UpdateBookMaterial()
     {
-        // Променяме материала на рендер компонента на книгата.
         GetComponent<Renderer>().material = materials[currentMaterialIndex];
     }
 
     public void CycleMaterial()
     {
-        // Завъртаме през масива от материали.
         currentMaterialIndex = (currentMaterialIndex + 1) % materials.Length;
         UpdateBookMaterial();
     }

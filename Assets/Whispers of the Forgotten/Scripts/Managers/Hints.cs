@@ -16,7 +16,8 @@ public class Hints : MonoBehaviour
     string[] initialHints = new string[]
     {
         "Hint: Press W A S D to move.",
-        "Hint: Press F to turn on/of îr change the flashlight mode.",
+        "Hint: Press F to turn on/off or change the flashlight mode.",
+        "Hint: Hold RMB to zoom.",
         "Hint: Everything around you is a key (listen, look around).",
         "Hint: The game cannot be saved."
     };

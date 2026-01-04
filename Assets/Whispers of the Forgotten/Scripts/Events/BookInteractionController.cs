@@ -5,17 +5,23 @@ using UnityEngine;
 public class BookInteractionController : MonoBehaviour
 {
     public Camera mainCamera;
-    public Transform mainBookshelfTransform; // Главен обект, съдържащ книгите
-    public Hints hints; // Система за подсказки
-    public GameObject bookUI; // UI за книгите
+    public Transform mainBookshelfTransform;
+    public Hints hints;
+    [Tooltip("The hand texture to display in the center of the screen")]
+    public Texture2D handTexture;
+    [Tooltip("Scale factor for the hand texture (0.1 = 10% of original size)")]
+    public float handTextureScale = 0.05f;
+    public GameObject bookUI; // UI
     public float interactDistance = 2.0f;
     public LayerMask interactionLayer;
-    public MoveCamera moveCameraScript; // Скрипт за движение на камерата
+    [Tooltip("Layer mask for obstructions (walls, etc.) that block raycast. Leave as 'Nothing' to use everything except interactionLayer.")]
+    public LayerMask obstructionLayer;
+    public MoveCamera moveCameraScript;
     public AudioSource heavyObjectPushedSoundEffect;
     public GameObject secretDoor;
-    public CharacterController playerController; // Контролер за движение на играча
-    public GameObject inventoryManager; // GameObject с Inventory System
-    private MonoBehaviour inventorySystemScript; // Скриптът за Inventory System
+    public CharacterController playerController;
+    public GameObject inventoryManager; // GameObject Inventory System
+    private MonoBehaviour inventorySystemScript; // Inventory System
 
     private bool isNearBook = false;
     private bool isOpenBookView = false;
@@ -24,7 +30,6 @@ public class BookInteractionController : MonoBehaviour
     private float playerInitialFieldOfView;
     private bool isColorsPuzzleDone = false;
 
-    // Правилна комбинация на цветовете (индекси в масива colors)
     private int[] correctCombination = { 2, 5, 6, 3 };
 
     void Start()
@@ -55,10 +60,31 @@ public class BookInteractionController : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, interactDistance, interactionLayer))
         {
+            // Check for obstructions between camera and hit point
+            Vector3 directionToHit = hit.point - mainCamera.transform.position;
+            float distanceToHit = Vector3.Distance(mainCamera.transform.position, hit.point);
+            RaycastHit obstructionHit;
+            
+            // Use obstructionLayer if set, otherwise use everything except interactionLayer
+            LayerMask obstructionCheckLayer = obstructionLayer.value != 0 ? obstructionLayer : ~interactionLayer;
+            
+            if (Physics.Raycast(mainCamera.transform.position, directionToHit.normalized, out obstructionHit, distanceToHit, obstructionCheckLayer))
+            {
+                // Check if the obstruction is the target object itself
+                if (obstructionHit.collider != hit.collider)
+                {
+                    // There's an obstruction blocking the view
+                    if (isNearBook)
+                    {
+                        isNearBook = false;
+                    }
+                    return;
+                }
+            }
+            
             if (hit.collider.CompareTag("BooksHolder"))
             {
                 isNearBook = true;
-                hints.ShowHint("Press E to Interact");
 
                 if (Input.GetKeyDown(KeyCode.E))
                 {
@@ -70,25 +96,42 @@ public class BookInteractionController : MonoBehaviour
 
             if (hit.collider.CompareTag("Book"))
             {
-                // Обработка на клика върху книга
                 BookController bookController = hit.collider.GetComponent<BookController>();
-                if (bookController != null && Input.GetMouseButtonDown(0)) // Ляв клик
+                if (bookController != null && Input.GetMouseButtonDown(0))
                 {
-                    bookController.CycleMaterial(); // Циклирайте цвета на книгата
-                    CheckForCorrectCombination(); // Проверка на комбинацията
+                    bookController.CycleMaterial();
+                    CheckForCorrectCombination();
                 }
             }
         }
 
         if (isNearBook)
         {
-            hints.HideHint();
             isNearBook = false;
+        }
+    }
+
+    void OnGUI()
+    {
+        // Only show hand texture when near an interactable book
+        if (handTexture != null && isNearBook)
+        {
+            // Calculate scaled size
+            float scaledWidth = handTexture.width * handTextureScale;
+            float scaledHeight = handTexture.height * handTextureScale;
+            
+            // Calculate center position of the screen
+            float x = (Screen.width - scaledWidth) * 0.5f;
+            float y = (Screen.height - scaledHeight) * 0.5f;
+            
+            // Draw the hand texture at the center with scaled size
+            GUI.DrawTexture(new Rect(x, y, scaledWidth, scaledHeight), handTexture);
         }
     }
 
     public void OpenBookView(Transform targetTransform)
     {
+        FindObjectOfType<FlashlightController>().isInLockView = true;
         bookUI.SetActive(true);
         isOpenBookView = true;
 
@@ -119,7 +162,6 @@ public class BookInteractionController : MonoBehaviour
             playerController.enabled = false;
         }
 
-        // Изключване на Inventory System скрипта
         if (inventorySystemScript != null)
         {
             inventorySystemScript.enabled = false;
@@ -128,6 +170,7 @@ public class BookInteractionController : MonoBehaviour
 
     public void CloseBookView()
     {
+        FindObjectOfType<FlashlightController>().isInLockView = false;
         bookUI.SetActive(false);
         isOpenBookView = false;
 
@@ -152,7 +195,6 @@ public class BookInteractionController : MonoBehaviour
             playerController.enabled = true;
         }
 
-        // Включване на Inventory System скрипта
         if (inventorySystemScript != null)
         {
             inventorySystemScript.enabled = true;
@@ -161,7 +203,6 @@ public class BookInteractionController : MonoBehaviour
 
     private void CheckForCorrectCombination()
     {
-        // Вземаме само книгите с правилния таг
         BookController[] bookControllers = mainBookshelfTransform.GetComponentsInChildren<BookController>()
                                        .Where(book => book.CompareTag("Book")).ToArray();
 
@@ -170,7 +211,6 @@ public class BookInteractionController : MonoBehaviour
         for (int i = 0; i < correctCombination.Length; i++)
         {
             currentCombination[i] = bookControllers[i].GetCurrentMaterialIndex();
-            Debug.Log(currentCombination[i]);
         }
 
         bool isCorrectCombination = true;

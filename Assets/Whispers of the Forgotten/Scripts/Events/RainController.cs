@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class RainController : MonoBehaviour
@@ -17,13 +15,11 @@ public class RainController : MonoBehaviour
 
         if (rainParticleSystem == null)
         {
-            Debug.LogError("No ParticleSystem component found on this GameObject.");
             return;
         }
 
         if (exclusionCollider == null)
         {
-            Debug.LogError("No Collider component found on the exclusionZone GameObject.");
             return;
         }
     }

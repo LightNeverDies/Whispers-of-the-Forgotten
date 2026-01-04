@@ -23,10 +23,22 @@ public class SubtitleManager : MonoBehaviour
 
     public void ShowSubtitle(string text)
     {
-        subtitleText.text = text;
+        // Normalize line endings to ensure newlines display correctly
+        string normalizedText = text.Replace("\r\n", "\n").Replace("\r", "\n");
+        subtitleText.text = normalizedText;
         subtitleText.gameObject.SetActive(true);
         isDisplaying = true;
         timer = displayDuration;
+    }
+    
+    public void ShowSubtitle(string text, float duration)
+    {
+        // Normalize line endings to ensure newlines display correctly
+        string normalizedText = text.Replace("\r\n", "\n").Replace("\r", "\n");
+        subtitleText.text = normalizedText;
+        subtitleText.gameObject.SetActive(true);
+        isDisplaying = true;
+        timer = duration;
     }
 
     void HideSubtitle()

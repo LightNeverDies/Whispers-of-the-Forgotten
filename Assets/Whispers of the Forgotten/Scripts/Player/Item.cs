@@ -7,4 +7,5 @@ public class Item : MonoBehaviour
     public string itemObjective;
     public bool isReadOnly;
     public string content;
+    public Sprite storyBackground;
 }

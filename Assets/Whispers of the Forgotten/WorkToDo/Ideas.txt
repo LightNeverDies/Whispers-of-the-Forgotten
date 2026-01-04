@@ -23,9 +23,9 @@
 Done Task (Of course everything can be more optimized or even extended)
 1, 2, 6, 7, 8, 9, 12, 14, 17, 20, 21
 Won't do
-3, 4, 18
+3, 4, 18, 15, 16
 Task That Are Done But Think if I should remove them
-15, 16
+
 
 // TO DO:
 
@@ -67,3 +67,62 @@ After hitting something like puzzel the player can use WASD and still move this 
 Hitting the wall with axe the sound is before the hit should be fix - Needs to be fixed
 Sometimes again you can fall under the map - Changed some Project Settings
 Text in Stories to be written with animation to be more cool - Fix
+
+
+Objectives - Bigger Font Size Fixed
+Prology - To slow fixed
+
+More to do:
+Settings -> Brightness Keyboard Resolution
+Flashlight Switching between mode to be with different key
+Flashlight Icon with the differnt mode on UV 
+More scary vibes
+cinematic scene
+
+
+
+New ->
+HintsDuringGame.cs -> /**
+ * TODO: 
+ * While Press E -> Maybe is better Idea to find a object to interact 
+ * While Open Inventory -> To not allow to press F or something else to change the text
+ */
+
+WaterSink -> should run when push water away in the bathroom -> I need better quality of water :) and way to stop the water.
+
+New Teddy Bear should pick on top of the stairs -> should be cool
+
+Poltergiest needs more scary times
+
+Pause menu should be changed to something cool -> 
+
+More scary sounds.
+
+Main Menu -> on the Right side -> Maybe Credits or just Thank you for playing something like that.
+
+
+09.06.2025 (NEW FEATURES)
+New and upgrade (this is for demo) ->
+
+1. I need a model for switches that will trigger and can be interactable to on lights (Almost Done!) (Needs to create light for every lamp + material and change it when panel turn off) (DONE!)
+2. Watersink still needs improvments (DONE!)
+3. Poltergiest NO MODEL NEEDED (MAYBE THROW STUFF AND NOT TO BE THAT VISIBLE OR SOMETHING BUT SCARRY STUFF LIKE JUMP) (REALLY IMPORTANT)
+4. Until Hint for flashlight -> icon to not be visible and to not allow player to press F until hint visible (DONE!)
+5. Pause menu should be changed (DONE!)
+6. More scary stuff into the game and events (Like footsteps around me, some creepy sounds like whisper and light goes on and off) (STILL ON WORK) 
+7. I should find why sometimes my camera is moved fast left or right and stopped there is something... (Ìight be fixed still not fully sure and sometimes again fall under the map needs to check everything) (STILL ON WORK UNTIL SOMEONE TEST IT AND NOTHING FOUND BY MULTIPLE PEOPLE)
+3, 6 and 7 are really important needs work
+
+
+
+----------
+FULL GAME
+
+After all changes made I need to continue working on scene where player get into the bed and do some cinematics possible with good view and etc.
+More upgrades needs to be done like:
+1. Cinematic scenes while player is on bed
+2. Something cool to happened while on bed to be scary and like a jump scare after that the player pass out and awake a little bit later while after opening eyes to can get out of the bed
+3. To progress into the end and the ball to teleport it.
+4. Better maze like more models and something cool (I should use meshy)
+5. Better ending while everything is good
+6. Credits (info about what was used and from where maybe)

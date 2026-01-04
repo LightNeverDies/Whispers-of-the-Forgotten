@@ -1,12 +1,17 @@
+using Interfaces;
 using UnityEngine;
 
-public class FlickeringLightController : MonoBehaviour
+public class FlickeringLightController : MonoBehaviour, IEventEffect, IPowerReactive
 {
     public Light lightSource;
-    public bool shouldFlicker = false;
+
+    [Header("Flickering Settings")]
+    public float minTime = 0.1f;
+    public float maxTime = 0.5f;
+
+    private bool shouldFlicker = false;
+    private bool hasPower = true;
     private float timeToNextFlicker;
-    public float minTime;
-    public float maxTime;
 
     void Start()
     {
@@ -18,11 +23,15 @@ public class FlickeringLightController : MonoBehaviour
         if (shouldFlicker)
         {
             timeToNextFlicker -= Time.deltaTime;
-            if (timeToNextFlicker <= 0)
+            if (timeToNextFlicker <= 0f)
             {
                 lightSource.enabled = !lightSource.enabled;
                 SetNextFlickerTime();
             }
+        }
+        else
+        {
+            lightSource.enabled = hasPower;
         }
     }
 
@@ -31,15 +40,25 @@ public class FlickeringLightController : MonoBehaviour
         timeToNextFlicker = Random.Range(minTime, maxTime);
     }
 
-    public void StartFlickering()
+    public void StartEffect()
     {
         shouldFlicker = true;
         SetNextFlickerTime();
     }
 
-    public void StopFlickering()
+    public void StopEffect()
     {
         shouldFlicker = false;
-        lightSource.enabled = true;
+        lightSource.enabled = hasPower;
+    }
+
+    public void SetPower(bool state)
+    {
+        hasPower = state;
+
+        if (!shouldFlicker)
+        {
+            lightSource.enabled = hasPower;
+        }
     }
 }

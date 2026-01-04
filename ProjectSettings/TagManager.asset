@@ -15,6 +15,9 @@ TagManager:
   - Water
   - Book
   - BooksHolder
+  - ElectricPanel
+  - Sink
+  - Fridge
   layers:
   - Default
   - TransparentFX
@@ -34,15 +37,15 @@ TagManager:
   - Player
   - Cabinet
   - Wall
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - ElectricalPanel
+  - Sink_Stream
+  - Throw
+  - Fall
+  - Whisper
+  - Move
+  - RockingChair
+  - Fridge
+  - Orb
   - 
   - 
   - 

@@ -1,56 +1,75 @@
+using Interfaces;
 using System.Collections;
 using UnityEngine;
 
-public class PoltergeistController : MonoBehaviour
+public class PoltergeistEffect : MonoBehaviour, IEventEffect
 {
     public Transform spawnPoint;
     public Transform destinationPoint;
     public GameObject poltergeistPrefab;
+    public float speed = 2.5f;
 
     public FlashlightController flashlightController;
+    public AudioSource poltergeistSoundEffect;
 
     private GameObject currentPoltergeist;
-    private bool isZoneUsed = false;
-    public AudioSource poltergiestSoundEffect;
+    private bool isRunning = false;
 
-    void OnTriggerEnter(Collider other)
+    public void StartEffect()
     {
-        if (other.CompareTag("Player") && !isZoneUsed && currentPoltergeist == null)
-        {
-            isZoneUsed = true;
-
-            currentPoltergeist = Instantiate(poltergeistPrefab, spawnPoint.position, Quaternion.identity);
-
-            StartCoroutine(MoveToDestination(currentPoltergeist, destinationPoint.position));
-
-            flashlightController.isEventGoing = true;
-            poltergiestSoundEffect.enabled = true;
-
-            poltergiestSoundEffect.Play();
-        }
+        if (isRunning) return;
+        isRunning = true;
+        StartCoroutine(SpawnAndMovePoltergeist());
     }
 
-    IEnumerator MoveToDestination(GameObject poltergeist, Vector3 destination)
+    public void StopEffect()
     {
-        Animator animator = poltergeist.GetComponent<Animator>();
-        if (animator)
+        if (currentPoltergeist != null)
         {
-            animator.SetBool("isWalking", true);
+            Destroy(currentPoltergeist);
+            currentPoltergeist = null;
+        }
+        flashlightController.isEventGoing = false;
+        poltergeistSoundEffect.Stop();
+        isRunning = false;
+    }
 
-            while (Vector3.Distance(poltergeist.transform.position, destination) > 0.1f)
+    private IEnumerator SpawnAndMovePoltergeist()
+    {
+        currentPoltergeist = Instantiate(poltergeistPrefab, spawnPoint.position, Quaternion.identity);
+        flashlightController.isEventGoing = true;
+        poltergeistSoundEffect.Play();
+
+        Animator animator = currentPoltergeist.GetComponent<Animator>();
+        if (animator) animator.SetBool("isWalking", true);
+
+        while (Vector3.Distance(currentPoltergeist.transform.position, destinationPoint.position) > 0.1f)
+        {
+            currentPoltergeist.transform.position = Vector3.MoveTowards(
+                currentPoltergeist.transform.position,
+                destinationPoint.position,
+                Time.deltaTime * speed);
+
+            Vector3 direction = (destinationPoint.position - currentPoltergeist.transform.position).normalized;
+            if (direction != Vector3.zero)
             {
-                poltergeist.transform.position = Vector3.MoveTowards(poltergeist.transform.position, destination, Time.deltaTime * 2f);
-                yield return null;
+                Quaternion lookRotation = Quaternion.LookRotation(direction);
+                currentPoltergeist.transform.rotation = Quaternion.Slerp(
+                    currentPoltergeist.transform.rotation,
+                    lookRotation,
+                    Time.deltaTime * 10f);
             }
 
-            animator.SetBool("isWalking", false);
-            Destroy(poltergeist);
-
-            flashlightController.isEventGoing = false;
-
-            isZoneUsed = true;
-            poltergiestSoundEffect.enabled = false;
+            yield return null;
         }
-       
+
+        if (animator) animator.SetBool("isWalking", false);
+
+        Destroy(currentPoltergeist);
+        currentPoltergeist = null;
+
+        flashlightController.isEventGoing = false;
+        poltergeistSoundEffect.Stop();
+        isRunning = false;
     }
 }

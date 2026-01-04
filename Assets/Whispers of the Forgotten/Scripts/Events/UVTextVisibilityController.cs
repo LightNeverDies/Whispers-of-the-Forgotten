@@ -4,14 +4,14 @@ using System.Collections.Generic;
 
 public class UVTextVisibilityController : MonoBehaviour
 {
-    public Light uvLight;  // UV светлина
-    public List<TextMeshPro> targetTexts;  // Списък с TextMeshPro компоненти
-    public Color invisibleColor = new Color(1, 1, 1, 0);  // Цвят за невидимо състояние (прозрачен)
-    public Color visibleColor = Color.white;  // Цвят за видимо състояние
-    public float detectionDistance = 10f;  // Дистанция за проверка на видимостта с UV светлина
-    public float detectionAngle = 30f;  // Ъгъл за проверка дали UV светлината е насочена към текста
+    public Light uvLight;
+    public List<TextMeshPro> targetTexts;
+    public Color invisibleColor = new Color(1, 1, 1, 0);
+    public Color visibleColor = Color.white;
+    public float detectionDistance = 10f;
+    public float detectionAngle = 30f;
 
-    private bool missionStarted = false;  // Променлива за проверка на състоянието на мисията
+    public bool missionStarted = false;
 
     private FlashlightController flashlightController;
 
@@ -26,10 +26,6 @@ public class UVTextVisibilityController : MonoBehaviour
         }
 
         flashlightController = uvLight.GetComponentInParent<FlashlightController>();
-        if (flashlightController == null)
-        {
-            Debug.LogError("FlashlightController not found!");
-        }
     }
 
     void Update()
